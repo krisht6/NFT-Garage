@@ -93,11 +93,6 @@
             color: #fff;
             box-shadow: 0 0 15px #ff00cc;
         }
-        .car-card button:disabled {
-            border-color: #666;
-            color: #666;
-            cursor: not-allowed;
-        }
         a {
             color: #00ffcc;
             text-decoration: none;
@@ -191,7 +186,6 @@
             <button onclick="buyCar(5, 60)">Buy</button>
         </div>
     </div>
-    <a href="https://starpeace-marketplace.com">Visit StarPeace</a>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
     <script>
@@ -199,7 +193,8 @@
         let accounts;
         let contract;
 
-        const contractAddress = "0x5f0533f981E7D7D8eB6a3b2524F1cE9e9bCCb2"; // Fixed contract address
+        // Replace this with your deployed contract address from Remix after deployment
+        const contractAddress = "0x5f0530e9197a32626688e4754a1033b7285bCCb2"; // TODO: Insert the contract address from Remix
 
         const contractABI = [
             {
@@ -716,11 +711,9 @@
                 } catch (error) {
                     console.error("User denied account access", error);
                     alert("Failed to connect wallet. Please allow MetaMask access.");
-                    document.getElementById('connectWallet').style.display = 'block';
                 }
             } else {
                 alert("Please install MetaMask!");
-                document.getElementById('connectWallet').style.display = 'block';
             }
         }
 
@@ -731,36 +724,15 @@
             }
             try {
                 // Use the price directly (assuming Yoda has 0 decimals, so 15 Yoda = 15 units)
-                const priceInUnits = price; // No conversion needed if 1 Yoda = 1 unit
+                const priceInUnits = price;
                 console.log(`Attempting to buy token ID ${tokenId} for ${priceInUnits} Yoda`);
 
-                // Get Yoda token address from the contract
-                const yodaTokenAddress = await contract.methods.yodaToken().call();
-                const yodaContract = new web3.eth.Contract([
-                    {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
-                    {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-                    {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}
-                ], yodaTokenAddress);
-
-                // Check balance
-                const balance = await yodaContract.methods.balanceOf(accounts[0]).call();
-                console.log(`Yoda balance: ${balance}`);
-                if (balance < priceInUnits) {
-                    throw new Error("Insufficient Yoda balance");
-                }
-
-                // Check and set allowance
-                const allowance = await yodaContract.methods.allowance(accounts[0], contractAddress).call();
-                if (allowance < priceInUnits) {
-                    alert("Approving contract to spend Yoda tokens...");
-                    await yodaContract.methods.approve(contractAddress, priceInUnits).send({ from: accounts[0] });
-                }
-
-                // Proceed with purchase
+                // Call completeSale (seller is the owner, buyer is the connected account)
                 const tx = await contract.methods.completeSale(tokenId, accounts[0], priceInUnits).send({ from: accounts[0] });
                 console.log("Transaction successful:", tx);
                 alert(`Successfully purchased car with token ID ${tokenId}! Check your wallet for the NFT.`);
 
+                // Optionally disable the Buy button after purchase
                 const buyButton = document.querySelector(`button[onclick="buyCar(${tokenId}, ${price})"]`);
                 buyButton.disabled = true;
                 buyButton.innerText = "Sold";
@@ -768,7 +740,7 @@
                 console.error("Purchase failed:", error);
                 if (error.message.includes("Not owner")) {
                     alert("This car is no longer available for purchase.");
-                } else if (error.message.includes("Insufficient Yoda balance")) {
+                } else if (error.message.includes("transfer amount exceeds balance")) {
                     alert("Purchase failed: Insufficient Yoda balance. Please ensure you have enough Yoda tokens.");
                 } else if (error.message.includes("allowance")) {
                     alert("Purchase failed: Please approve the contract to spend your Yoda tokens in MetaMask.");
@@ -779,14 +751,6 @@
         }
 
         document.getElementById('connectWallet').addEventListener('click', initWeb3);
-        document.getElementById('connectWallet').style.display = 'block';
-
-        // Debug image loading
-        const images = document.querySelectorAll('.car-card img');
-        images.forEach(img => {
-            img.onerror = () => console.error(`Failed to load image: ${img.src}`);
-            img.onload = () => console.log(`Successfully loaded image: ${img.src}`);
-        });
     </script>
 </body>
 </html>
