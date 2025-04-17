@@ -102,67 +102,656 @@
         a:hover {
             text-decoration: underline;
         }
+        #wallet-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #wallet-section button {
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        #wallet-section button:hover {
+            background: #00ffcc;
+            color: #fff;
+            box-shadow: 0 0 15px #00ffcc;
+        }
     </style>
 </head>
 <body>
     <h1>NFT Garage</h1>
-    <p class="subtitle">Collect and customize digital cars as NFTs!</p>
+    <p class="subtitle">Collect digital cars as NFTs!</p>
+    <div id="wallet-section">
+        <button id="connectWallet">Connect Wallet</button>
+        <p id="walletAddress"></p>
+    </div>
     <div class="car-container">
         <div class="car-card">
-            <img src="car images/civic.jpg" alt="Honda Civic">
+            <img src="car images/honda_civic.jpg" alt="Honda Civic">
             <h3>Honda Civic</h3>
             <p>Price: 15 Yoda</p>
             <div class="specs">
-                <p>Paint: Metallic Grey</p>
+                <p>Paint: Silver</p>
                 <p>Engine: 1.5L Turbo</p>
                 <p>Horsepower: 174 HP</p>
             </div>
-            <button onclick="alert('Connect MetaMask to buy!')">Buy</button>
+            <button onclick="buyCar(1, 15)">Buy</button>
         </div>
         <div class="car-card">
-            <img src="car images/subaru.jpg" alt="Subaru WRX">
+            <img src="car images/subaru_wrx.jpg" alt="Subaru WRX">
             <h3>Subaru WRX</h3>
             <p>Price: 20 Yoda</p>
             <div class="specs">
-                <p>Paint: Blue Mica</p>
+                <p>Paint: Midnight Blue</p>
                 <p>Engine: 2.5L Turbo</p>
                 <p>Horsepower: 271 HP</p>
             </div>
-            <button onclick="alert('Connect MetaMask to buy!')">Buy</button>
+            <button onclick="buyCar(2, 20)">Buy</button>
         </div>
         <div class="car-card">
-            <img src="car images/lexus.jpg" alt="Lexus ES350">
+            <img src="car images/lexus_es350.jpg" alt="Lexus ES350">
             <h3>Lexus ES350</h3>
             <p>Price: 30 Yoda</p>
             <div class="specs">
-                <p>Paint: Nebula Grey Pearl</p>
+                <p>Paint: Pearl White</p>
                 <p>Engine: 3.5L V6</p>
                 <p>Horsepower: 302 HP</p>
             </div>
-            <button onclick="alert('Connect MetaMask to buy!')">Buy</button>
+            <button onclick="buyCar(3, 30)">Buy</button>
         </div>
         <div class="car-card">
-            <img src="car images/bmw.jpg" alt="BMW M4 Competition">
+            <img src="car images/bmw_m4_comp.jpg" alt="BMW M4 Competition">
             <h3>BMW M4 Competition</h3>
             <p>Price: 45 Yoda</p>
             <div class="specs">
-                <p>Paint: Frozen Deep Grey</p>
+                <p>Paint: Matte Black</p>
                 <p>Engine: 3.0L Twin-Turbo Inline-6</p>
                 <p>Horsepower: 503 HP</p>
             </div>
-            <button onclick="alert('Connect MetaMask to buy!')">Buy</button>
+            <button onclick="buyCar(4, 45)">Buy</button>
         </div>
         <div class="car-card">
-            <img src="car images/audi.jpg" alt="Audi R8">
+            <img src="car images/audi_r8.jpg" alt="Audi R8">
             <h3>Audi R8</h3>
             <p>Price: 60 Yoda</p>
             <div class="specs">
-                <p>Paint: Midnight Blue</p>
+                <p>Paint: Arctic Silver</p>
                 <p>Engine: 5.2L V10</p>
                 <p>Horsepower: 562 HP</p>
             </div>
-            <button onclick="alert('Connect MetaMask to buy!')">Buy</button>
+            <button onclick="buyCar(5, 60)">Buy</button>
         </div>
     </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
+    <script>
+        let web3;
+        let accounts;
+        let contract;
+
+        // Replace this with your deployed contract address from Remix after deployment
+        const contractAddress = "0x5f0530e9197a32626688e4754a1033b7285bCCb2"; // TODO: Insert the contract address from Remix
+
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_yodaAddress",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "approved",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Approval",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "operator",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bool",
+                        "name": "approved",
+                        "type": "bool"
+                    }
+                ],
+                "name": "ApprovalForAll",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "previousOwner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "OwnershipTransferred",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Transfer",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approve",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "cars",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "model",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "paint",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "bodyKit",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "engine",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "performanceScore",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "buyer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "price",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "completeSale",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getApproved",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "operator",
+                        "type": "address"
+                    }
+                ],
+                "name": "isApprovedForAll",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "name",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "ownerOf",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "renounceOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "safeTransferFrom",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "data",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "safeTransferFrom",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "operator",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "approved",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setApprovalForAll",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes4",
+                        "name": "interfaceId",
+                        "type": "bytes4"
+                    }
+                ],
+                "name": "supportsInterface",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "tokenURI",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "newPaint",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "newBodyKit",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "newEngine",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "newTokenURI",
+                        "type": "string"
+                    }
+                ],
+                "name": "updateCarMods",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "yodaToken",
+                "outputs": [
+                    {
+                        "internalType": "contract IERC20",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        async function initWeb3() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    document.getElementById('walletAddress').innerText = `Connected: ${accounts[0]}`;
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                    console.log("Contract initialized:", contract);
+                } catch (error) {
+                    console.error("User denied account access", error);
+                    alert("Failed to connect wallet. Please allow MetaMask access.");
+                }
+            } else {
+                alert("Please install MetaMask!");
+            }
+        }
+
+        async function buyCar(tokenId, price) {
+            if (!accounts || !contract) {
+                alert("Please connect your wallet first!");
+                return;
+            }
+            try {
+                // Convert price from Yoda to Wei (assuming Yoda has 18 decimals)
+                const priceInWei = web3.utils.toWei(price.toString(), 'ether');
+                console.log(`Attempting to buy token ID ${tokenId} for ${price} Yoda (${priceInWei} Wei)`);
+
+                // Call completeSale (seller is the owner, buyer is the connected account)
+                const tx = await contract.methods.completeSale(tokenId, accounts[0], priceInWei).send({ from: accounts[0] });
+                console.log("Transaction successful:", tx);
+                alert(`Successfully purchased car with token ID ${tokenId}! Check your wallet for the NFT.`);
+
+                // Optionally disable the Buy button after purchase
+                const buyButton = document.querySelector(`button[onclick="buyCar(${tokenId}, ${price})"]`);
+                buyButton.disabled = true;
+                buyButton.innerText = "Sold";
+            } catch (error) {
+                console.error("Purchase failed:", error);
+                if (error.message.includes("Not owner")) {
+                    alert("This car is no longer available for purchase.");
+                } else if (error.message.includes("transfer amount exceeds balance")) {
+                    alert("Purchase failed: Insufficient Yoda balance. Please ensure you have enough Yoda tokens.");
+                } else if (error.message.includes("allowance")) {
+                    alert("Purchase failed: Please approve the contract to spend your Yoda tokens in MetaMask.");
+                } else {
+                    alert(`Purchase failed: ${error.message}`);
+                }
+            }
+        }
+
+        document.getElementById('connectWallet').addEventListener('click', initWeb3);
+    </script>
 </body>
 </html>
